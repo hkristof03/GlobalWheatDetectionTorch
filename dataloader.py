@@ -98,7 +98,6 @@ def get_train_valid_df(
     return train_df, valid_df
 
 def collate_fn(batch):
-    print(f"Batch's type: {type(batch)}, Batch's shape: {len(batch)}")
     return tuple(zip(*batch))
 
 def get_train_valid_dataloaders(
@@ -149,3 +148,14 @@ if __name__ == '__main__':
         collate_fn
     )
     print(len(train_data_loader))
+
+    image, target, image_id = next(iter(train_data_loader))
+
+    print(type(image[0]))
+    #print(f"{k: type(v) for k, v in target[0].items()}")
+    print(type(image_id[0]))
+    #print(target[0].items())
+    for k, v in target[0].items():
+
+        #print(f"{k}: {type(v)}")
+        print(f"{k}: {v.dtype}")
