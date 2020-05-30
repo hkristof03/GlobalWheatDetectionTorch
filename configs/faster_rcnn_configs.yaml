@@ -1,0 +1,14 @@
+dataloader:
+  path_df: './datasets/train.csv'
+  train_dataset:
+    dir_train: './datasets/train/'
+  valid_dataset:
+    dir_test: './datasets/test/'
+  train_loader:
+    batch_size: 32
+    shuffle: False
+    num_workers: 1
+  valid_loader:
+    batch_size: 16
+    shuffle: False
+    num_workers: 1

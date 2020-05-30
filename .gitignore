@@ -1,0 +1,9 @@
+/notebooks
+/datasets/train/*
+/datasets/test/*
+/datasets/train.csv
+/datasets/sample_submission.csv
+/models/__pycache__
+/transformations/__pycache__
+/utils/__pycache__
+__pycache__/
