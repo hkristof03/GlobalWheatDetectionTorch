@@ -5,10 +5,10 @@ dataloader:
   valid_dataset:
     dir_test: './datasets/test/'
   train_loader:
-    batch_size: 4
+    batch_size: 16
     shuffle: False
     num_workers: 4
   valid_loader:
-    batch_size: 4
+    batch_size: 16
     shuffle: False
     num_workers: 4
