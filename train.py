@@ -35,9 +35,9 @@ def train_model(
             targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
 
             loss_dict = model(images, targets)
-            print(f"Loss dict: {loss_dict}")
+            #print(f"Loss dict: {loss_dict}")
             losses = sum(loss for loss in loss_dict.values())
-            print(f"Losses: {losses}")
+            #print(f"Losses: {losses}")
             loss_value = losses.item()
 
             loss_hist.send(loss_value)
