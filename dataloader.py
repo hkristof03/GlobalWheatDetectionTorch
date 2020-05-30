@@ -44,7 +44,7 @@ class WheatDataset(Dataset):
         area = (boxes[:, 3] - boxes[:, 1]) * (boxes[:, 2] - boxes[:, 0])
         area = torch.as_tensor(area, dtype=torch.float32)
         # there is only one class
-        labels = torch.ones((records.shape[0],), dtype=torch.float32)
+        labels = torch.ones((records.shape[0],), dtype=torch.int64)
         # suppose all instances are not crowd
         iscrowd = torch.zeros((records.shape[0],), dtype=torch.int64)
 
