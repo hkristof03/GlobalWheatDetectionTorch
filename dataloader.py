@@ -152,13 +152,6 @@ if __name__ == '__main__':
     )
     print(len(train_data_loader))
 
-    image, target, image_id = next(iter(train_data_loader))
+    images, targets, image_ids = next(iter(train_data_loader))
 
-    print(type(image[0]))
-    #print(f"{k: type(v) for k, v in target[0].items()}")
-    print(type(image_id[0]))
-    #print(target[0].items())
-    for k, v in target[0].items():
-
-        #print(f"{k}: {type(v)}")
-        print(f"{k}: {v.dtype}")
+    print(f"Length of Train dataset: {len(train_data_loader.dataset)}")
