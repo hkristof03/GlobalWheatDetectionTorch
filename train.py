@@ -63,6 +63,8 @@ def train_model(
             losses.backward()
             optimizer.step()
 
+            break
+
 
         # update the learning rate
         if lr_scheduler is not None:
