@@ -19,6 +19,7 @@ def train_model(
     ):
     """
     """
+    detection_threshold = 0.5
     history = []
 
     if torch.cuda.is_available():
@@ -53,7 +54,7 @@ def train_model(
             targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
 
             loss_dict = model(images, targets)
-            #print(f"Loss dict: {loss_dict}")
+            print(f"Loss dict: {loss_dict}")
             losses = sum(loss for loss in loss_dict.values())
             #print(f"Losses: {losses}")
             loss_value = losses.item()
@@ -95,12 +96,50 @@ def train_model(
                     {k: v.to(cpu_device) for k, v in t.items()} for t in outputs
                 ]
 
+                # res should be moved outside
+                results = []
+                for i, image in enumerate(images):
+
+                    boxes = outputs[i]['boxes'].numpy()
+                    scores = outputs[i]['scores'].numpy()
+
+                    print(
+                        "Number of predicted boxes before thresholding: "
+                        f"{len(boxes)}"
+                    )
+
+                    boxes = boxes[scores >= detection_threshold].astype(np.int32)
+                    scores = scores[scores >= detection_threshold]
+                    image_id = image_ids[i]
+
+                    target_boxes = targets[i]['boxes']
+                    print(f"Image id: {image_ids[i]}")
+                    print(f"Target boxes: {target_boxes}")
+                    print(f"Number of target boxes: {len(target_boxes)}")
+                    print(f"Predicted boxes: {boxes}")
+                    print(
+                        f"Number of predicted boxes after thresholding: "
+                        f"{len(boxes)}"
+                    )
+
+
+                    result = {
+                        'image_id': image_id
+
+                    }
+                    break
+                break
+
+
+                """
                 print(f"First output: {outputs[0]}")
                 print(f"Outputs: {outputs[:5]}")
-                
+                break
+
                 res = {}
                 for target, output in zip(targets, outputs):
                     res[target["image_id"].item()] = output
+                """
 
         # Calculate average losses
         train_loss = train_loss / len(train_data_loader.dataaset)
