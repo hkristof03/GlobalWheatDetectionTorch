@@ -29,6 +29,9 @@ def train_model(
     model.to(device)
 
     overall_start = timer()
+
+    n_train_batches = len(train_data_loader)
+    n_valid_batches = len(valid_data_loader)
     # Main loop
     for epoch in range(num_epochs):
 
@@ -40,7 +43,9 @@ def train_model(
         model.train()
         start = timer()
 
-        for images, targets, image_ids in train_data_loader:
+        for ii, (images, targets, image_ids) in train_data_loader:
+
+            print(f"\nEpoch #{epoch} Train Batch #{ii}/{n_train_batches}")
 
             images = list(image.to(device) for image in images)
             targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
@@ -70,14 +75,18 @@ def train_model(
             # Set to evaluation mode (BatchNorm and Dropout works differently)
             model.eval()
             # Validation loop
-            for images, targets, image_ids in valid_data_loader:
+            for ii, (images, targets, image_ids) in valid_data_loader:
+
+                print(
+                    f"\nEpoch #{epoch} Validation Batch #{ii}/{n_valid_batches}"
+                )
                 # Tensors to gpu
                 images = list(image.to(device) for image in images)
                 targets = [
                     {k: v.to(device) for k, v in t.items()} for t in targets
                 ]
 
-                loss_dict = model(images, targets)
+                loss_dict = model(images)
                 losses = sum(loss for loss in loss_dict.values())
 
                 loss_value = losses.item()
