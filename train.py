@@ -127,7 +127,7 @@ def train_model(
 
                     for i_, box in enumerate(boxes):
 
-                        box = box.as_tensor(box)
+                        box = torch.as_tensor(box)
                         ious = []
 
                         for ii_, tbox in enumerate(target_boxes):
