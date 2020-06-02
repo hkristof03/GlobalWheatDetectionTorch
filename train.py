@@ -131,6 +131,7 @@ def train_model(
                         ious = []
 
                         for ii_, tbox in enumerate(target_boxes):
+                            tbox = tbox.type(torch.int32)
                             print(box)
                             print(tbox)
                             iou = bbox_iou(box, tbox.to(cpu_device))
