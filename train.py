@@ -87,6 +87,7 @@ def train_model(
                 ]
 
                 loss_dict = model(images)
+                print(loss_dict)
                 losses = sum(loss for loss in loss_dict.values())
 
                 loss_value = losses.item()
