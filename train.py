@@ -1,3 +1,5 @@
+import numpy as np
+
 import torch
 # Timing utility
 from timeit import default_timer as timer
