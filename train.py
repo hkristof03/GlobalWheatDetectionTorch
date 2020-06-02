@@ -131,8 +131,8 @@ def train_model(
                         ious = []
 
                         for ii_, tbox in enumerate(target_boxes):
-                            print(type(box))
-                            print(type(tbox))
+                            print(box)
+                            print(tbox)
                             iou = bbox_iou(box, tbox)
                             ious.append(iou)
 
