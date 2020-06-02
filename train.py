@@ -133,7 +133,7 @@ def train_model(
                         for ii_, tbox in enumerate(target_boxes):
                             print(box)
                             print(tbox)
-                            iou = bbox_iou(box, tbox)
+                            iou = bbox_iou(box, tbox.to(cpu_device))
                             ious.append(iou)
 
                         print(f"IOUs: {ious}")
@@ -157,7 +157,7 @@ def train_model(
                 """
 
         # Calculate average losses
-        train_loss = train_loss / len(train_data_loader.dataaset)
+        train_loss = train_loss / len(train_data_loader.dataset)
         valid_loss = valid_loss / len(valid_data_loader.dataset)
 
         history.append([train_loss, valid_loss])
