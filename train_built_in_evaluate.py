@@ -7,6 +7,8 @@ from dataloader import get_train_valid_dataloaders, collate_fn
 from models.model_zoo import get_model
 from utils.averager import Averager
 
+from engine import evaluate
+
 
 def train_model(
     train_data_loader,
@@ -25,8 +27,6 @@ def train_model(
         device = torch.device('cuda')
     else:
         device = torch.device('cpu')
-
-    cpu_device = torch.device('cpu')
 
     model.to(device)
 
@@ -95,12 +95,7 @@ def train_model(
                     {k: v.to(cpu_device) for k, v in t.items()} for t in outputs
                 ]
 
-                print(f"First output: {outputs[0]}")
-                print(f"Outputs: {outputs[:5]}")
-                
                 res = {}
-                for target, output in zip(targets, outputs):
-                    res[target["image_id"].item()] = output
 
         # Calculate average losses
         train_loss = train_loss / len(train_data_loader.dataaset)
