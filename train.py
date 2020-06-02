@@ -43,7 +43,7 @@ def train_model(
         model.train()
         start = timer()
 
-        for ii, (images, targets, image_ids) in train_data_loader:
+        for ii, (images, targets, image_ids) in enumerate(train_data_loader):
 
             print(f"\nEpoch #{epoch} Train Batch #{ii}/{n_train_batches}")
 
@@ -75,7 +75,7 @@ def train_model(
             # Set to evaluation mode (BatchNorm and Dropout works differently)
             model.eval()
             # Validation loop
-            for ii, (images, targets, image_ids) in valid_data_loader:
+            for ii, (images, targets, image_ids) in enumerate(valid_data_loader):
 
                 print(
                     f"\nEpoch #{epoch} Validation Batch #{ii}/{n_valid_batches}"
