@@ -8,6 +8,7 @@ from utils.config_parser import parse_args, parse_yaml
 from dataloader import get_train_valid_dataloaders, collate_fn
 from models.model_zoo import get_model
 from utils.averager import Averager
+from utils.metrics import bbox_iou
 
 
 def train_model(
@@ -124,6 +125,17 @@ def train_model(
                         f"{len(boxes)}"
                     )
 
+                    for i_, box in enumerate(boxes):
+
+                        box = box.as_tensor(box)
+                        ious = []
+
+                        for ii_, tbox in enumerate(target_boxes):
+
+                            iou = bbox_iou(box, tbox)
+                            ious.append(iou)
+
+                        print(f"IOUs: {ious}")
 
                     result = {
                         'image_id': image_id
