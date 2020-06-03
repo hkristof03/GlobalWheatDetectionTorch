@@ -111,8 +111,8 @@ def train_model(
                     preds_sorted = preds[preds_sorted_idx]
 
                     image_precision = calculate_image_precision(
-                        preds_sorted,
                         gt_boxes,
+                        pred_sorted,
                         threshold=iou_thresholds,
                         form='coco'
                     )
