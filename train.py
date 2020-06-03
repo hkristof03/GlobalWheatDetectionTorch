@@ -113,8 +113,8 @@ def train_model(
                     image_precision = calculate_image_precision(
                         gt_boxes,
                         preds_sorted,
-                        threshold=iou_thresholds,
-                        form='coco'
+                        iou_thresholds,
+                        'coco',
                     )
                     validation_image_precisions.append(image_precision)
 
