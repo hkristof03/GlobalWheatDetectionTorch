@@ -1,5 +1,6 @@
 import numpy as np
 import numba
+from numba import jit
 
 @jit(nopython=True)
 def calculate_iou(gt, pr, form='pascal_voc') -> float:
