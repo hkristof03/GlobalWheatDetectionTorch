@@ -71,7 +71,6 @@ def train_model(
 
             break
 
-
         # update the learning rate
         if lr_scheduler is not None:
             lr_scheduler.step()
@@ -99,61 +98,11 @@ def train_model(
                     {k: v.to(cpu_device) for k, v in t.items()} for t in outputs
                 ]
 
-                # res should be moved outside
-                results = []
-                for i, image in enumerate(images):
+                for k, v in outputs.items():
+                    print(f"{k}: {v}")
 
-                    boxes = outputs[i]['boxes'].numpy()
-                    scores = outputs[i]['scores'].numpy()
-
-                    print(
-                        "Number of predicted boxes before thresholding: "
-                        f"{len(boxes)}"
-                    )
-
-                    boxes = boxes[scores >= detection_threshold].astype(np.int32)
-                    scores = scores[scores >= detection_threshold]
-                    image_id = image_ids[i]
-
-                    target_boxes = targets[i]['boxes']
-                    print(f"Image id: {image_ids[i]}")
-                    print(f"Target boxes: {target_boxes}")
-                    print(f"Number of target boxes: {len(target_boxes)}")
-                    print(f"Predicted boxes: {boxes}")
-                    print(
-                        f"Number of predicted boxes after thresholding: "
-                        f"{len(boxes)}"
-                    )
-
-                    for i_, box in enumerate(boxes):
-
-                        box = torch.as_tensor(box)
-                        ious = []
-
-                        for ii_, tbox in enumerate(target_boxes):
-                            tbox = tbox.type(torch.int32)
-                            iou = bbox_iou(box, tbox.to(cpu_device))
-                            ious.append(iou)
-
-                        print(f"IOUs: {ious}")
-
-                    result = {
-                        'image_id': image_id
-
-                    }
-                    break
                 break
 
-
-                """
-                print(f"First output: {outputs[0]}")
-                print(f"Outputs: {outputs[:5]}")
-                break
-
-                res = {}
-                for target, output in zip(targets, outputs):
-                    res[target["image_id"].item()] = output
-                """
 
         # Calculate average losses
         train_loss = train_loss / len(train_data_loader.dataset)
