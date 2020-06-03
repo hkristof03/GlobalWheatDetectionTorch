@@ -8,7 +8,6 @@ from utils.config_parser import parse_args, parse_yaml
 from dataloader import get_train_valid_dataloaders, collate_fn
 from models.model_zoo import get_model
 from utils.averager import Averager
-from utils.metrics import bbox_iou
 
 
 def train_model(
