@@ -69,8 +69,6 @@ def train_model(
             losses.backward()
             optimizer.step()
 
-            break
-
         # update the learning rate
         if lr_scheduler is not None:
             lr_scheduler.step()
@@ -120,23 +118,19 @@ def train_model(
 
             validation_precision = np.mean(validation_image_precisions)
 
-            print("Validation IOU: {0:.4f}".format(validation_precision))
+            print("Validation MAP: {0:.4f}".format(validation_precision))
 
         # Calculate average losses
         train_loss = train_loss / len(train_data_loader.dataset)
 
         history.append([train_loss, validation_precision])
 
-        break
-
     # End of training
     total_time = timer() - overall_start
-    """
     print(
         f"{total_time:.2f} total seconds elapsed. {total_time / (epoch):.2f} "
         "seconds per epoch"
     )
-    """
     torch.save(model.state_dict(), path_save_model)
     history = pd.DataFrame(
         history,
@@ -144,8 +138,6 @@ def train_model(
     )
 
     return model, history
-
-
 
 
 

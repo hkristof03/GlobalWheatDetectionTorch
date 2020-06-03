@@ -248,5 +248,10 @@ if __name__ == '__main__':
     # Sort highest confidence -> lowest confidence
     preds_sorted_idx = np.argsort(scores)[::-1]
     preds_sorted = preds[preds_sorted_idx]
-    precision = calculate_precision(gt_boxes.copy(), preds_sorted, threshold=0.5, form='coco')
+    precision = calculate_precision(
+        gt_boxes.copy(),
+        preds_sorted,
+        threshold=0.5,
+        form='coco'
+    )
     print("Precision at threshold 0.5: {0:.4f}".format(precision))
