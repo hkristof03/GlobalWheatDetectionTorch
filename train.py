@@ -105,7 +105,7 @@ def train_model(
 
                     preds = outputs[idx]['boxes']
                     scores = outputs[idx]['scores']
-                    gt_boxes = targets[idx]['boxes'].numpy()
+                    gt_boxes = targets[idx]['boxes'].to(cpu_device).numpy()
 
                     preds_sorted_idx = np.argsort(scores)[::-1]
                     preds_sorted = preds[preds_sorted_idx]
