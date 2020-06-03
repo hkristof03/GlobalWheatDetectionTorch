@@ -156,7 +156,7 @@ if __name__ == '__main__':
     optimizer = torch.optim.SGD(params, lr=0.005, momentum=0.9,
         weight_decay=0.0005)
     lr_scheduler = None
-    num_epochs = 10
+    num_epochs = 30
 
     model, history = train_model(train_data_loader, valid_data_loader, model,
         optimizer, num_epochs, lr_scheduler)
