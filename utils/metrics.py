@@ -47,7 +47,14 @@ def calculate_iou(gt, pr, form='pascal_voc') -> float:
     return overlap_area / union_area
 
 @jit(nopython=True)
-def find_best_match(gts, pred, pred_idx, threshold = 0.5, form = 'pascal_voc', ious=None) -> int:
+def find_best_match(
+    gts,
+    pred,
+    pred_idx,
+    threshold = 0.5,
+    form = 'pascal_voc',
+    ious=None
+    ) -> int:
     """Returns the index of the 'best match' between the
     ground-truth boxes and the prediction. The 'best match'
     is the highest IoU. (0.0 IoUs are ignored).
@@ -90,7 +97,13 @@ def find_best_match(gts, pred, pred_idx, threshold = 0.5, form = 'pascal_voc', i
     return best_match_idx
 
 @jit(nopython=True)
-def calculate_precision(gts, preds, threshold = 0.5, form = 'coco', ious=None) -> float:
+def calculate_precision(
+    gts,
+    preds,
+    threshold = 0.5,
+    form = 'coco',
+    ious=None
+    ) -> float:
     """Calculates precision for GT - prediction pairs at one threshold.
 
     Args:
@@ -134,8 +147,8 @@ def calculate_precision(gts, preds, threshold = 0.5, form = 'coco', ious=None) -
 def calculate_image_precision(
     gts,
     preds,
-    thresholds = (0.5, ),
-    form = 'coco'
+    thresholds,
+    form,
     ) -> float:
     """Calculates image precision.
 
@@ -161,3 +174,77 @@ def calculate_image_precision(
         image_precision += precision_at_threshold / n_threshold
 
     return image_precision
+
+
+if __name__ == '__main__':
+
+    gt_boxes = [
+        [954, 391, 70, 90],
+        [660, 220, 95, 102],
+        [ 64, 209, 76, 57],
+        [896,  99, 102, 69],
+        [747, 460, 72, 77],
+        [885, 163, 103, 69],
+        [514, 399, 90, 97],
+        [702, 794, 97, 99],
+        [721, 624, 98, 108],
+        [826, 512, 82, 94],
+        [883, 944, 79, 74],
+        [247, 594, 123, 92],
+        [673, 514, 95, 113],
+        [829, 847, 102, 110],
+        [94, 737, 92, 107],
+        [588, 568, 75, 107],
+        [158, 890, 103, 64],
+        [744, 906, 75, 79],
+        [826,  33, 72, 74],
+        [601,  69, 67, 87]
+    ]
+
+    preds = np.array(
+        [
+            [956, 409, 68, 85],
+            [883, 945, 85, 77],
+            [745, 468, 81, 87],
+            [658, 239, 103, 105],
+            [518, 419, 91, 100],
+            [711, 805, 92, 106],
+            [62, 213, 72, 64],
+            [884, 175, 109, 68],
+            [721, 626, 96, 104],
+            [878, 619, 121, 81],
+            [887, 107, 111, 71],
+            [827, 525, 88, 83],
+            [816, 868, 102, 86],
+            [166, 882, 78, 75],
+            [603, 563, 78, 97],
+            [744, 916, 68, 52],
+            [582, 86, 86, 72],
+            [79, 715, 91, 101],
+            [246, 586, 95, 80],
+            [181, 512, 93, 89],
+            [655, 527, 99, 90],
+            [568, 363, 61, 76],
+            [9, 717, 152, 110],
+            [576, 698, 75, 78],
+            [805, 974, 75, 50],
+            [10, 15, 78, 64],
+            [826, 40, 69, 74],
+            [32, 983, 106, 40]
+        ]
+    )
+
+    scores = np.array(
+        [
+            0.9932319, 0.99206185, 0.99145633, 0.9898089, 0.98906296, 0.9817738,
+            0.9799762, 0.97967803, 0.9771589, 0.97688967, 0.9562935, 0.9423076,
+            0.93556845, 0.9236257, 0.9102379, 0.88644403, 0.8808225, 0.85238415,
+            0.8472188, 0.8417798, 0.79908705, 0.7963756, 0.7437897, 0.6044758,
+            0.59249884, 0.5557045, 0.53130984, 0.5020239
+        ]
+    )
+    # Sort highest confidence -> lowest confidence
+    preds_sorted_idx = np.argsort(scores)[::-1]
+    preds_sorted = preds[preds_sorted_idx]
+    precision = calculate_precision(gt_boxes.copy(), preds_sorted, threshold=0.5, form='coco')
+    print("Precision at threshold 0.5: {0:.4f}".format(precision))
