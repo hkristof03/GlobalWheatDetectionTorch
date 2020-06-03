@@ -110,7 +110,6 @@ def train_model(
                     preds_sorted_idx = np.argsort(scores)[::-1]
                     preds_sorted = preds[preds_sorted_idx]
 
-                    print(iou_thresholds)
                     image_precision = calculate_image_precision(
                         gt_boxes,
                         preds_sorted,
@@ -129,7 +128,7 @@ def train_model(
         history.append([train_loss, validation_precision])
 
         break
-        
+
     # End of training
     total_time = timer() - overall_start
     print(
