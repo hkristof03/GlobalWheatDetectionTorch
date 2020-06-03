@@ -78,7 +78,7 @@ def train_model(
         print(f"\nEpoch #{epoch}: {timer() - start:.2f} seconds elapsed.")
 
         validation_image_precisions = []
-        iou_thresholds = [x for x in np.arange(0.5, 0.76, 0.05)]
+        iou_thresholds = [np.round(x, 2) for x in np.arange(0.5, 0.76, 0.05)]
 
         # Don't need to keep track of gradients
         with torch.no_grad():
@@ -123,18 +123,13 @@ def train_model(
 
             print("Validation IOU: {0:.4f}".format(validation_precision))
 
-
-
         # Calculate average losses
         train_loss = train_loss / len(train_data_loader.dataset)
 
         history.append([train_loss, validation_precision])
 
-        print(
-            f"\nEpoch: {epoch} \tTraining loss: {train_loss:.4f} \t"
-            f"Validation loss: {valid_loss:.4f}"
-        )
-
+        break
+        
     # End of training
     total_time = timer() - overall_start
     print(
