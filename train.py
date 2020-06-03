@@ -9,6 +9,8 @@ from dataloader import get_train_valid_dataloaders, collate_fn
 from models.model_zoo import get_model
 from utils.averager import Averager
 
+from utils.metrics import calculate_image_precision
+
 
 def train_model(
     train_data_loader,
@@ -42,7 +44,6 @@ def train_model(
 
         # Keep track of training and validation loss each epoch
         train_loss = 0.0
-        valid_loss = 0.0
 
         # Set to training
         model.train()
@@ -76,7 +77,7 @@ def train_model(
 
         print(f"\nEpoch #{epoch}: {timer() - start:.2f} seconds elapsed.")
 
-        validation_image_precision = []
+        validation_image_precisions = []
         iou_thresholds = [x for x in np.arange(0.5, 0.76, 0.05)]
 
         # Don't need to keep track of gradients
@@ -100,17 +101,33 @@ def train_model(
                     {k: v.to(cpu_device).numpy() for k, v in t.items()} for t in outputs
                 ]
 
-                for k, v in outputs[0].items():
-                    print(f"{k}: {v}")
+                for idx, image in enumerate(images):
 
-                break
+                    preds = outputs[idx]['boxes']
+                    scores = outputs[idx]['scores']
+                    gt_boxes = targets[idx]['boxes']
+
+                    preds_sorted_idx = np.argsort(scores)[::-1]
+                    preds_sorted = preds[preds_sorted_idx]
+
+                    image_precision = calculate_image_precision(
+                        preds_sorted,
+                        gt_boxes,
+                        threshold=iou_thresholds,
+                        form='coco'
+                    )
+                    validation_image_precisions.append(image_precision)
+
+            validation_precision = np.mean(validation_image_precisions)
+
+            print("Validation IOU: {0:.4f}".format(validation_precision))
+
 
 
         # Calculate average losses
         train_loss = train_loss / len(train_data_loader.dataset)
-        valid_loss = valid_loss / len(valid_data_loader.dataset)
 
-        history.append([train_loss, valid_loss])
+        history.append([train_loss, validation_precision])
 
         print(
             f"\nEpoch: {epoch} \tTraining loss: {train_loss:.4f} \t"
@@ -127,7 +144,7 @@ def train_model(
     torch.save(model.state_dict(), path_save_model)
     history = pd.DataFrame(
         history,
-        columns=['train_loss', 'valid_loss']
+        columns=['train_loss', 'valid_map']
     )
 
     return model, history
