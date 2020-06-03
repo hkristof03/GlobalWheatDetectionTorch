@@ -97,7 +97,7 @@ def train_model(
                     {k: v.to(cpu_device) for k, v in t.items()} for t in outputs
                 ]
 
-                for k, v in outputs.items():
+                for k, v in outputs[0].items():
                     print(f"{k}: {v}")
 
                 break
