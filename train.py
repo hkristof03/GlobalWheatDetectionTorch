@@ -76,6 +76,9 @@ def train_model(
 
         print(f"\nEpoch #{epoch}: {timer() - start:.2f} seconds elapsed.")
 
+        validation_image_precision = []
+        iou_thresholds = [x for x in np.arange(0.5, 0.76, 0.05)]
+
         # Don't need to keep track of gradients
         with torch.no_grad():
             # Set to evaluation mode (BatchNorm and Dropout works differently)
@@ -94,7 +97,7 @@ def train_model(
 
                 outputs = model(images)
                 outputs = [
-                    {k: v.to(cpu_device) for k, v in t.items()} for t in outputs
+                    {k: v.to(cpu_device).numpy() for k, v in t.items()} for t in outputs
                 ]
 
                 for k, v in outputs[0].items():
