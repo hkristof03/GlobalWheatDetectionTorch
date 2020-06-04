@@ -139,6 +139,8 @@ if __name__ == '__main__':
     configs = parse_yaml(args.pyaml)
     configs_dataloader = configs['dataloader']
 
+    path_save_model = './artifacts/saved_models/fasterrcnn_test1.pth'
+
     train_data_loader, valid_data_loader = get_train_valid_dataloaders(
         configs_dataloader,
         collate_fn
@@ -148,9 +150,9 @@ if __name__ == '__main__':
     optimizer = torch.optim.SGD(params, lr=0.0005, momentum=0.9,
         weight_decay=0.0005)
     lr_scheduler = None
-    num_epochs = 30
+    num_epochs = 90
 
     model, history = train_model(train_data_loader, valid_data_loader, model,
-        optimizer, num_epochs, lr_scheduler)
+        optimizer, num_epochs, lr_scheduler, path_save_model)
 
-    history.to_csv('./artifacts/history/fasterrcnn_test.csv', index=False)
+    history.to_csv('./artifacts/history/fasterrcnn_test1.csv', index=False)
