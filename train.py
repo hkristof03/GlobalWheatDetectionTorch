@@ -23,7 +23,7 @@ def train_model(
     ):
     """
     """
-    detection_threshold = 0.5
+    iou_thresholds = [np.round(x, 2) for x in np.arange(0.5, 0.76, 0.05)]
     history = []
 
     if torch.cuda.is_available():
@@ -42,9 +42,9 @@ def train_model(
     # Main loop
     for epoch in range(num_epochs):
 
-        # Keep track of training and validation loss each epoch
+        # Keep track of training loss and validation MAP each epoch
         train_loss = 0.0
-
+        validation_image_precisions = []
         # Set to training
         model.train()
         start = timer()
@@ -75,9 +75,6 @@ def train_model(
 
         print(f"\nEpoch #{epoch}: {timer() - start:.2f} seconds elapsed.")
 
-        validation_image_precisions = []
-        iou_thresholds = [np.round(x, 2) for x in np.arange(0.5, 0.76, 0.05)]
-
         # Don't need to keep track of gradients
         with torch.no_grad():
             # Set to evaluation mode (BatchNorm and Dropout works differently)
@@ -90,9 +87,6 @@ def train_model(
                 )
                 # Tensors to gpu
                 images = list(image.to(device) for image in images)
-                targets = [
-                    {k: v.to(device) for k, v in t.items()} for t in targets
-                ]
 
                 outputs = model(images)
                 outputs = [
@@ -103,7 +97,7 @@ def train_model(
 
                     preds = outputs[idx]['boxes']
                     scores = outputs[idx]['scores']
-                    gt_boxes = targets[idx]['boxes'].to(cpu_device).numpy()
+                    gt_boxes = targets[idx]['boxes'].numpy()
 
                     preds_sorted_idx = np.argsort(scores)[::-1]
                     preds_sorted = preds[preds_sorted_idx]
@@ -116,14 +110,12 @@ def train_model(
                     )
                     validation_image_precisions.append(image_precision)
 
-            validation_precision = np.mean(validation_image_precisions)
-
-            print("Validation MAP: {0:.4f}".format(validation_precision))
-
+        validation_map = np.mean(validation_image_precisions)
+        print("Validation MAP: {0:.4f}".format(validation_map))
         # Calculate average losses
         train_loss = train_loss / len(train_data_loader.dataset)
 
-        history.append([train_loss, validation_precision])
+        history.append([train_loss, validation_map])
 
     # End of training
     total_time = timer() - overall_start
@@ -153,7 +145,7 @@ if __name__ == '__main__':
     )
     model = get_model()
     params = [p for p in model.parameters() if p.requires_grad]
-    optimizer = torch.optim.SGD(params, lr=0.005, momentum=0.9,
+    optimizer = torch.optim.SGD(params, lr=0.0005, momentum=0.9,
         weight_decay=0.0005)
     lr_scheduler = None
     num_epochs = 30
