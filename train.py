@@ -23,7 +23,8 @@ def train_model(
     ):
     """
     """
-    iou_thresholds = [np.round(x, 2) for x in np.arange(0.5, 0.76, 0.05)]
+    scores_dict_train = get_empty_scores_dict(train_data_loader)
+    scores_dict_valid = get_empty_scores_dict(valid_data_loader)
     history = []
 
     if torch.cuda.is_available():
@@ -38,13 +39,11 @@ def train_model(
     overall_start = timer()
 
     n_train_batches = len(train_data_loader)
-    n_valid_batches = len(valid_data_loader)
     # Main loop
     for epoch in range(num_epochs):
 
         # Keep track of training loss and validation MAP each epoch
         train_loss = 0.0
-        validation_image_precisions = []
         # Set to training
         model.train()
         start = timer()
@@ -75,47 +74,18 @@ def train_model(
 
         print(f"\nEpoch #{epoch}: {timer() - start:.2f} seconds elapsed.")
 
-        # Don't need to keep track of gradients
-        with torch.no_grad():
-            # Set to evaluation mode (BatchNorm and Dropout works differently)
-            model.eval()
-            # Validation loop
-            for ii, (images, targets, image_ids) in enumerate(valid_data_loader):
+        scores_dict_train, train_map = predict_data_set(model,
+            train_data_loader, scores_dict_train, epoch, dataset='Train',
+            device, cpu_device)
 
-                print(
-                    f"\nEpoch #{epoch} Validation Batch #{ii}/{n_valid_batches}"
-                )
-                # Tensors to gpu
-                images = list(image.to(device) for image in images)
+        scores_dict_valid, valid_map = predict_data_set(model,
+            valid_data_loader, scores_dict_valid, epoch, dataset='Validation',
+            device, cpu_deivce)
 
-                outputs = model(images)
-                outputs = [
-                    {k: v.to(cpu_device).numpy() for k, v in t.items()} for t in outputs
-                ]
-
-                for idx, image in enumerate(images):
-
-                    preds = outputs[idx]['boxes']
-                    scores = outputs[idx]['scores']
-                    gt_boxes = targets[idx]['boxes'].numpy()
-
-                    preds_sorted_idx = np.argsort(scores)[::-1]
-                    preds_sorted = preds[preds_sorted_idx]
-
-                    image_precision = calculate_image_precision(
-                        gt_boxes,
-                        preds_sorted,
-                        iou_thresholds,
-                        'coco',
-                    )
-                    validation_image_precisions.append(image_precision)
-
-        validation_map = np.mean(validation_image_precisions)
-        print("Validation MAP: {0:.4f}".format(validation_map))
         # Calculate average losses
         train_loss = train_loss / len(train_data_loader.dataset)
 
-        history.append([train_loss, validation_map])
+        history.append([train_loss, train_map, valid_map])
 
     # End of training
     total_time = timer() - overall_start
@@ -124,13 +94,91 @@ def train_model(
         "seconds per epoch"
     )
     torch.save(model.state_dict(), path_save_model)
-    history = pd.DataFrame(
+
+    df_history = pd.DataFrame(
         history,
-        columns=['train_loss', 'valid_map']
+        columns=['train_loss', 'train_map', 'valid_map']
     )
+    df_scores_train = pd.DataFrame(scores_dict_train)
+    df_scores_valid = pd.DataFrame(scores_dict_valid)
 
-    return model, history
+    return (df_history, df_scores_train, df_scores_valid)
 
+
+def predict_data_set(
+    model,
+    data_loader,
+    scores_dict,
+    epoch,
+    dataset='Validation',
+    device,
+    cpu_device,
+    ):
+    """
+    """
+    iou_thresholds = [np.round(x, 2) for x in np.arange(0.5, 0.76, 0.05)]
+    image_precisions = []
+    n_batches = len(data_loader)
+
+    # Don't need to keep track of gradients
+    with torch.no_grad():
+
+        if model.training:
+            # Set to evaluation mode (BatchNorm and Dropout works differently)
+            model.eval()
+
+        # Validation loop
+        for ii, (images, targets, image_ids) in enumerate(data_loader):
+
+            print(
+                f"\nEpoch #{epoch} Validation Batch #{ii}/{n_batches}"
+            )
+            # Tensors to gpu
+            images = list(image.to(device) for image in images)
+
+            outputs = model(images)
+            outputs = [
+                {k: v.to(cpu_device).numpy() for k, v in t.items()} for t in outputs
+            ]
+
+            for idx, image in enumerate(images):
+
+                preds = outputs[idx]['boxes']
+                scores = outputs[idx]['scores']
+                gt_boxes = targets[idx]['boxes'].numpy()
+
+                preds_sorted_idx = np.argsort(scores)[::-1]
+                preds_sorted = preds[preds_sorted_idx]
+
+                image_precision = calculate_image_precision(
+                    gt_boxes,
+                    preds_sorted,
+                    iou_thresholds,
+                    'coco',
+                )
+                validation_image_precisions.append(image_precision)
+
+                image_id = image_ids[idx]
+                scores_dict[image_id].append(image_precision)
+
+    map = np.mean(validation_image_precisions)
+    print("{dataset} MAP: {0:.4f}".format(map))
+
+    return scores_dict, map
+
+
+def get_empty_scores_dict(data_loader):
+    """
+    """
+    scores_dict = {}
+
+    for ii, (images, targets, image_ids) in enumerate(data_loader):
+
+        for idx, image_id in enumerate(image_ids):
+
+            scores_dict[image_id] = []
+
+    return scores_dict
 
 
 if __name__ == '__main__':
@@ -138,8 +186,13 @@ if __name__ == '__main__':
     args = parse_args()
     configs = parse_yaml(args.pyaml)
     configs_dataloader = configs['dataloader']
+    configs_train = configs['train']
 
-    path_save_model = './artifacts/saved_models/fasterrcnn_test1.pth'
+    psm = configs_train['path_save_model']
+    mn = configs_train['model_name']
+    path_save_model = psm + mn + '.pth'
+    ph = configs_train['path_history']
+    path_history = ph + mn
 
     train_data_loader, valid_data_loader = get_train_valid_dataloaders(
         configs_dataloader,
@@ -150,9 +203,12 @@ if __name__ == '__main__':
     optimizer = torch.optim.SGD(params, lr=0.0005, momentum=0.9,
         weight_decay=0.0005)
     lr_scheduler = None
-    num_epochs = 90
+    num_epochs = configs_train['epochs']
 
-    model, history = train_model(train_data_loader, valid_data_loader, model,
-        optimizer, num_epochs, lr_scheduler, path_save_model)
+    df_history, df_scores_train, df_scores_valid = train_model(train_data_loader,
+        valid_data_loader, model, optimizer, num_epochs, lr_scheduler,
+        path_save_model)
 
-    history.to_csv('./artifacts/history/fasterrcnn_test1.csv', index=False)
+    df_history.to_csv(path_history + '_history.csv', index=False)
+    df_scores_train.to_csv(path_history + '_scores_train.csv', index=False)
+    df_scores_valid.to_csv(path_history + '_scores_valid.csv', index=False)
