@@ -14,7 +14,7 @@ dataloader:
     num_workers: 4
 
 train:
-  epochs: 1
+  epochs: 2
   path_save_model: './artifacts/saved_models/'
-  model_name: 'fasterrcnn_test1.pth'
+  model_name: 'fasterrcnn_test1'
   path_history: './artifacts/history/'

@@ -18,6 +18,8 @@ class EarlyStopping(object):
             self.valid_loss_min = valid_loss
             self.best_epoch = epoch
 
+            return True
+
         # Otherwise increment count of epochs with no improvement
         else:
             self.epochs_no_improve += 1
@@ -25,15 +27,7 @@ class EarlyStopping(object):
             if self.epochs_no_improve >= self.max_epochs_stop:
                 print(
                     f'Early Stopping! Total epochs: {epoch}. Best epoch: '
-                    f'{self.best_epoch} with loss: {valid_loss_min:.2f} and '
-                    f'acc: {100 * valid_acc:.2f}%'
+                    f'{self.best_epoch} with Mean Average Precision: '
+                    f'{self.valid_map_min:.2f}.'
                 )
-                total_time = timer() - overall_start
-                print(
-                    f'{total_time:.2f} total seconds elapsed. '
-                    f'{total_time / (epoch+1):.2f} seconds per epoch.'
-                )
-                # Load the best state dict
-                model.load_state_dict(torch.load(save_file_name))
-                # Attach the optimizer
-                model.optimizer = optimizer
+            return False
