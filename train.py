@@ -162,7 +162,7 @@ def predict_data_set(
                 scores_dict[image_id].append(image_precision)
 
     map = np.mean(image_precisions)
-    print("{dataset} MAP: {0:.4f}".format(map))
+    print(f"{dataset} MAP: {0:.4f}".format(map))
 
     return scores_dict, map
 
