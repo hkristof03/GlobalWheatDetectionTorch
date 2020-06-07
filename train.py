@@ -75,12 +75,12 @@ def train_model(
         print(f"\nEpoch #{epoch}: {timer() - start:.2f} seconds elapsed.")
 
         scores_dict_train, train_map = predict_data_set(model,
-            train_data_loader, scores_dict_train, epoch, dataset='Train',
-            device, cpu_device)
+            train_data_loader, scores_dict_train, epoch, device, cpu_device,
+            'Train')
 
         scores_dict_valid, valid_map = predict_data_set(model,
-            valid_data_loader, scores_dict_valid, epoch, dataset='Validation',
-            device, cpu_deivce)
+            valid_data_loader, scores_dict_valid, epoch, device, cpu_deivce,
+            'Validation')
 
         # Calculate average losses
         train_loss = train_loss / len(train_data_loader.dataset)
@@ -110,9 +110,9 @@ def predict_data_set(
     data_loader,
     scores_dict,
     epoch,
-    dataset='Validation',
     device,
     cpu_device,
+    dataset,
     ):
     """
     """
