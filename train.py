@@ -156,12 +156,12 @@ def predict_data_set(
                     iou_thresholds,
                     'coco',
                 )
-                validation_image_precisions.append(image_precision)
+                image_precisions.append(image_precision)
 
                 image_id = image_ids[idx]
                 scores_dict[image_id].append(image_precision)
 
-    map = np.mean(validation_image_precisions)
+    map = np.mean(image_precisions)
     print("{dataset} MAP: {0:.4f}".format(map))
 
     return scores_dict, map
