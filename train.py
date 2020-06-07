@@ -79,7 +79,7 @@ def train_model(
             'Train')
 
         scores_dict_valid, valid_map = predict_data_set(model,
-            valid_data_loader, scores_dict_valid, epoch, device, cpu_deivce,
+            valid_data_loader, scores_dict_valid, epoch, device, cpu_device,
             'Validation')
 
         # Calculate average losses
@@ -131,7 +131,8 @@ def predict_data_set(
         for ii, (images, targets, image_ids) in enumerate(data_loader):
 
             print(
-                f"\nEpoch #{epoch} Validation Batch #{ii}/{n_batches}"
+                f"\nEpoch #{epoch} {dataset} Batch #{ii}/{n_batches} "
+                f"calculating Mean Average Precision..."
             )
             # Tensors to gpu
             images = list(image.to(device) for image in images)
