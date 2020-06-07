@@ -27,7 +27,7 @@ def get_valid_transform():
 
 class ImgAugTrainTransform:
     def __init__(self):
-        self.aug = seq = iaa.Sequential(
+        self.aug = iaa.Sequential(
             [
                 #iaa.AllChannelsHistogramEqualization(),
                # iaa.MultiplySaturation((0.5, 1.5)),
