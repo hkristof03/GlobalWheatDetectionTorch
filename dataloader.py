@@ -38,8 +38,7 @@ class WheatDataset(Dataset):
         image = np.array(image)
 
         bboxes = records[['x1','y1','x2','y2']].values
-        areas = self.df['area']
-        areas = torch.as_tensor(areas, dtype=torch.float32)
+        areas = torch.as_tensor(self.df['area'].values, dtype=torch.float32)
         # there is only one class
         labels = torch.ones((records.shape[0],), dtype=torch.int64)
         # suppose all instances are not crowd
