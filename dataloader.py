@@ -6,7 +6,7 @@ random.seed(2020)
 import torch
 from torch.utils.data import DataLoader, Dataset
 
-import cv2
+from PIL import Image
 import pandas as pd
 import numpy as np
 
@@ -20,12 +20,13 @@ DIR_TEST = f'{DIR_INPUT}/test'
 
 class WheatDataset(Dataset):
 
-    def __init__(self, dataframe, image_dir, transforms=None):
+    def __init__(self, dataframe, image_dir, to_tensor, transforms=None):
         super().__init__()
 
         self.image_ids = dataframe['image_id'].unique()
         self.df = dataframe
         self.image_dir = image_dir
+        self.to_tensor = to_tensor
         self.transforms = transforms
 
     def __getitem__(self, index):
@@ -33,35 +34,40 @@ class WheatDataset(Dataset):
         image_id = self.image_ids[index]
         records = self.df.loc[(self.df['image_id'] == image_id)]
 
-        image = cv2.imread(f'{self.image_dir}/{image_id}.jpg', cv2.IMREAD_COLOR)
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB).astype(np.float32)
-        image /= 255.0
+        image = Image.open(f'{self.image_dir}/{image_id}.jpg')
+        image = np.array(image)
 
-        boxes = records[['x', 'y', 'w', 'h']].values
-        boxes[:, 2] = boxes[:, 0] + boxes[:, 2]
-        boxes[:, 3] = boxes[:, 1] + boxes[:, 3]
-
-        area = (boxes[:, 3] - boxes[:, 1]) * (boxes[:, 2] - boxes[:, 0])
-        area = torch.as_tensor(area, dtype=torch.float32)
+        bboxes = records[['x1','y1','x2','y2']].values
+        areas = self.df['area']
+        areas = torch.as_tensor(areas, dtype=torch.float32)
         # there is only one class
         labels = torch.ones((records.shape[0],), dtype=torch.int64)
         # suppose all instances are not crowd
         iscrowd = torch.zeros((records.shape[0],), dtype=torch.int64)
 
         target = {}
-        target['boxes'] = boxes
+        target['boxes'] = bboxes
         target['labels'] = labels
         target['image_id'] = torch.tensor([index])
-        target['area'] = area
+        target['area'] = areas
         target['iscrowd'] = iscrowd
 
         if self.transforms:
+            image, bboxes_aug = self.transforms(
+                image=image,
+                bounding_boxes=bboxes
+            )
+            target['boxes'] = bboxes_aug
+
+        else:
+            image = image.astype(np.float32)
+            image /= 255.0
             sample = {
                 'image': image,
                 'bboxes': target['boxes'],
                 'labels': labels
             }
-            sample = self.transforms(**sample)
+            sample = self.to_tensor(**sample)
             image = sample['image']
             target['boxes'] = torch.stack(
                 tuple(map(
@@ -69,6 +75,7 @@ class WheatDataset(Dataset):
                     zip(*sample['bboxes']))
                 )
             ).permute(1, 0)
+
 
         return image, target, image_id
 
@@ -84,9 +91,19 @@ def get_train_valid_df(
     """
     """
     df = pd.read_csv(path_df)
+    df['bbox'] = df['bbox'].apply(lambda x: literal_eval(x))
+    bboxes = list(df['bbox'])
+    imgaug_boxes = []
 
-    box_data = np.stack(df['bbox'].apply(lambda x: literal_eval(x)))
-    df[['x', 'y', 'w', 'h']] = pd.DataFrame(box_data).astype(np.float)
+    for bbox in bboxes:
+        xmin, ymin, width, height = bbox[0], bbox[1], bbox[2], bbox[3]
+        imgaug_boxes.append([xmin, ymin, xmin+width, ymin+height])
+
+    df['imgaug_bbox'] = imgaug_boxes
+    box_data = np.stack(df['imgaug_bbox'])
+    df[['x1','y1','x2','y2']] = pd.DataFrame(box_data).astype(np.float)
+    areas = (box_data[:, 3] - box_data[:, 1]) * (box_data[:, 2] - box_data[:, 0])
+    df['area'] = areas
 
     image_ids = df['image_id'].unique()
     random.shuffle(image_ids)
@@ -112,18 +129,20 @@ def get_train_valid_dataloaders(
     dir_train = config_dataloader['train_dataset']['dir_train']
 
     train_df, valid_df = get_train_valid_df(path_df)
-    train_trf = transforms.get_train_transform()
-    valid_trf = transforms.get_valid_transform()
+    train_trf = transforms.ImgAugTrainTransform()
+    valid_trf = transforms.to_tensor()
 
     train_dataset = WheatDataset(
         train_df,
         dir_train,
-        train_trf,
+        transforms=train_trf,
+        to_tensor=transforms.to_tensor(),
     )
     valid_dataset = WheatDataset(
         valid_df,
         dir_train,
-        valid_trf,
+        transforms=None,
+        to_tensor=valid_trf,
     )
     config_train_loader = config_dataloader['train_loader']
     config_valid_loader = config_dataloader['valid_loader']
