@@ -39,7 +39,7 @@ class WheatDataset(Dataset):
 
         bboxes = records[['x1','y1','x2','y2']].values
 
-        if all(v == 0 for v in bboxes):
+        if np.all(bboxes == 0):
             bboxes_null = True
             target = {
                 "boxes": torch.zeros((0, 4), dtype=torch.float32),
