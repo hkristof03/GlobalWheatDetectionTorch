@@ -46,7 +46,7 @@ class WheatDataset(Dataset):
                 "labels": torch.zeros(0, dtype=torch.int64),
                 "image_id": 4,
                 "area": torch.zeros(0, dtype=torch.float32),
-                "masks": torch.zeros((0, image_height, image_width),
+                "masks": torch.zeros((0, image.shape[0], image.shape[1]),
                     dtype=torch.uint8),
                 "keypoints": torch.zeros((17, 0, 3), dtype=torch.float32),
                 "iscrowd": torch.zeros((0,), dtype=torch.int64)
