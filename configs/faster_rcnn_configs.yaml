@@ -15,7 +15,7 @@ dataloader:
     num_workers: 4
 
 train:
-  epochs: 84
+  epochs: 62
   path_save_model: './artifacts/saved_models/'
-  model_name: 'fasterrcnn_imgaug_stop'
+  model_name: 'fasterrcnn_negative_test'
   path_history: './artifacts/history/'
