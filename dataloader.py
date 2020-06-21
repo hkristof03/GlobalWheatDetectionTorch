@@ -80,7 +80,7 @@ class WheatDataset(Dataset):
             target = {
                 "boxes": torch.zeros((0, 4), dtype=torch.float32),
                 "labels": torch.zeros(0, dtype=torch.int64),
-                "image_id": 4,
+                "image_id": torch.tensor([index]),
                 "area": torch.zeros(0, dtype=torch.float32),
                 "masks": torch.zeros((0, image.shape[0], image.shape[1]),
                     dtype=torch.uint8),
