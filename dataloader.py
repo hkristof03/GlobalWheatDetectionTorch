@@ -39,40 +39,25 @@ class WheatDataset(Dataset):
 
         bboxes = records[['x1','y1','x2','y2']].values
 
-        if np.all(bboxes == 0):
-            bboxes_null = True
-            target = {
-                "boxes": torch.zeros((0, 4), dtype=torch.float32),
-                "labels": torch.zeros(0, dtype=torch.int64),
-                "image_id": 4,
-                "area": torch.zeros(0, dtype=torch.float32),
-                "masks": torch.zeros((0, image.shape[0], image.shape[1]),
-                    dtype=torch.uint8),
-                "keypoints": torch.zeros((17, 0, 3), dtype=torch.float32),
-                "iscrowd": torch.zeros((0,), dtype=torch.int64)
-            }
-        else:
-            bboxes_null = False
-            areas = torch.as_tensor(self.df['area'].values, dtype=torch.float32)
-            # there is only one class
-            labels = torch.ones((records.shape[0],), dtype=torch.int64)
-            # suppose all instances are not crowd
-            iscrowd = torch.zeros((records.shape[0],), dtype=torch.int64)
+        areas = torch.as_tensor(self.df['area'].values, dtype=torch.float32)
+        # there is only one class
+        labels = torch.ones((records.shape[0],), dtype=torch.int64)
+        # suppose all instances are not crowd
+        iscrowd = torch.zeros((records.shape[0],), dtype=torch.int64)
 
-            target = {}
-            target['boxes'] = bboxes
-            target['labels'] = labels
-            target['image_id'] = torch.tensor([index])
-            target['area'] = areas
-            target['iscrowd'] = iscrowd
+        target = {}
+        target['boxes'] = bboxes
+        target['labels'] = labels
+        target['image_id'] = torch.tensor([index])
+        target['area'] = areas
+        target['iscrowd'] = iscrowd
 
         if self.transforms:
             image, bboxes_aug = self.transforms(
                 image=image,
                 bounding_boxes=bboxes
             )
-            if not bboxes_null:
-                target['boxes'] = bboxes_aug
+            target['boxes'] = bboxes_aug
 
         else:
             image = image.astype(np.float32)
@@ -91,6 +76,17 @@ class WheatDataset(Dataset):
                 )
             ).permute(1, 0)
 
+        if np.all(bboxes == 0):
+            target = {
+                "boxes": torch.zeros((0, 4), dtype=torch.float32),
+                "labels": torch.zeros(0, dtype=torch.int64),
+                "image_id": 4,
+                "area": torch.zeros(0, dtype=torch.float32),
+                "masks": torch.zeros((0, image.shape[0], image.shape[1]),
+                    dtype=torch.uint8),
+                "keypoints": torch.zeros((17, 0, 3), dtype=torch.float32),
+                "iscrowd": torch.zeros((0,), dtype=torch.int64)
+            }
 
         return image, target, image_id
 
