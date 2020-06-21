@@ -38,25 +38,41 @@ class WheatDataset(Dataset):
         image = np.array(image)
 
         bboxes = records[['x1','y1','x2','y2']].values
-        areas = torch.as_tensor(self.df['area'].values, dtype=torch.float32)
-        # there is only one class
-        labels = torch.ones((records.shape[0],), dtype=torch.int64)
-        # suppose all instances are not crowd
-        iscrowd = torch.zeros((records.shape[0],), dtype=torch.int64)
 
-        target = {}
-        target['boxes'] = bboxes
-        target['labels'] = labels
-        target['image_id'] = torch.tensor([index])
-        target['area'] = areas
-        target['iscrowd'] = iscrowd
+        if bboxes == [0,0,0,0]:
+            bboxes_null = True
+            target = {
+                "boxes": torch.zeros((0, 4), dtype=torch.float32),
+                "labels": torch.zeros(0, dtype=torch.int64),
+                "image_id": 4,
+                "area": torch.zeros(0, dtype=torch.float32),
+                "masks": torch.zeros((0, image_height, image_width),
+                    dtype=torch.uint8),
+                "keypoints": torch.zeros((17, 0, 3), dtype=torch.float32),
+                "iscrowd": torch.zeros((0,), dtype=torch.int64)
+            }
+        else:
+            bboxes_null = False
+            areas = torch.as_tensor(self.df['area'].values, dtype=torch.float32)
+            # there is only one class
+            labels = torch.ones((records.shape[0],), dtype=torch.int64)
+            # suppose all instances are not crowd
+            iscrowd = torch.zeros((records.shape[0],), dtype=torch.int64)
+
+            target = {}
+            target['boxes'] = bboxes
+            target['labels'] = labels
+            target['image_id'] = torch.tensor([index])
+            target['area'] = areas
+            target['iscrowd'] = iscrowd
 
         if self.transforms:
             image, bboxes_aug = self.transforms(
                 image=image,
                 bounding_boxes=bboxes
             )
-            target['boxes'] = bboxes_aug
+            if not bboxes_null:
+                target['boxes'] = bboxes_aug
 
         else:
             image = image.astype(np.float32)
