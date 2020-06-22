@@ -19,7 +19,7 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description='Provide list of image sizes for rescale.'
     )
-    parser.add_argument('-sizes', '--list', nargs='+', 
+    parser.add_argument('--sizes', '--list', nargs='+', 
         help='List of desired image sizes.', default=[256, 512]
     )
     return parser.parse_args()
