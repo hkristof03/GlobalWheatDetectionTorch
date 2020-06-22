@@ -43,6 +43,7 @@ def rescale_dataset(path, path_save, size):
     df['bbox'] = df['bbox'].apply(lambda x: literal_eval(x))
     # imgaug bbox requires top left and bottom right coordinates, while the competition
     # coordinates are in the form of [xmin, ymin, width, height]
+
     bboxes = list(df['bbox'])
     imgaug_boxes = []
 
@@ -72,20 +73,18 @@ def rescale_dataset(path, path_save, size):
         image_aug = Image.fromarray(image_aug)
         image_aug.save(os.path.join(path_save, img_id + '.jpg'))
 
-        width = df.loc[(df['image_id'] == img_id)]['width'].values[0]
-        height = df.loc[(df['image_id'] == img_id)]['height'].values[0]
-        source = df.loc[(df['image_id'] == img_id)]['source'].values[0]
-
         bboxes = bbs_aug.to_xyxy_array()
         bboxes[:, 2] = bboxes[:, 2] - bboxes[:, 0]
         bboxes[:, 3] = bboxes[:, 3] - bboxes[:, 1]
 
         length = len(bboxes)
+        sizes = [size for i in range(length)]
+        source = df.loc[(df['image_id'] == img_id)]['source'].values[0]
 
         d = {
             'image_id': [img_id for i in range(length)],
-            'width': [width for i in range(length)],
-            'height': [height for i in range(length)],
+            'width': sizes,
+            'height': sizes,
             'source': [source for i in range(length)],
             'bbox': [list(bbox) for bbox in bboxes],
         }
@@ -93,7 +92,7 @@ def rescale_dataset(path, path_save, size):
         df_ = pd.DataFrame(d)
         df_res = pd.concat([df_res, df_], axis=0, sort=True)
         
-    df_res.to_csv(os.path.join(*path, f'train_{size}x{size}.csv'), index=False)
+    df_res.to_csv(os.path.join(*path, f'train_{size}x{size}.csv'))
     
     
 if __name__ == '__main__':
