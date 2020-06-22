@@ -19,7 +19,7 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description='Provide list of image sizes for rescale.'
     )
-    parser.add_argument('--sizes', '--list', type=int, 
+    parser.add_argument('--sizes', type=int, nargs='+',
         help='List of desired image sizes.', default=[256, 512])
     return parser.parse_args()
 
@@ -27,7 +27,10 @@ def parse_args():
 def rescale_dataset(path, path_save, size):
     """
     """
-    path_save = os.path.join(*path_save)
+    path_source = os.path.abspath(os.path.join(
+        os.path.dirname(__file__), os.path.pardir, *path))
+    path_save = os.path.abspath(os.path.join(
+        os.path.dirname(__file__), os.path.pardir, *path_save))
     
     if not os.path.isdir(path_save):
         os.mkdir(path_save)
@@ -35,14 +38,13 @@ def rescale_dataset(path, path_save, size):
     df_res = pd.DataFrame()
     
     seq = iaa.Sequential([
-            iaa.size.Resize((size, size)),
-        ])
-    df = pd.read_csv(os.path.join(*path,'train.csv'))
+        iaa.size.Resize((size, size)),
+    ])
+    df = pd.read_csv(os.path.join(path_source,'train.csv'))
 
     df['bbox'] = df['bbox'].apply(lambda x: literal_eval(x))
     # imgaug bbox requires top left and bottom right coordinates, while the competition
     # coordinates are in the form of [xmin, ymin, width, height]
-
     bboxes = list(df['bbox'])
     imgaug_boxes = []
 
@@ -51,18 +53,15 @@ def rescale_dataset(path, path_save, size):
         imgaug_boxes.append([xmin, ymin, xmin+width, ymin+height])
 
     df['imgaug_bbox'] = imgaug_boxes
-
     image_ids = list(df['image_id'].unique())
     
     for i, img_id in enumerate(tqdm(image_ids)):
 
         bboxes = list(df.loc[(df['image_id'] == img_id)]['imgaug_bbox'])
-
-        img = Image.open(os.path.join(*path, 'train', img_id + '.jpg'))
+        img = Image.open(os.path.join(path_source, 'train', img_id + '.jpg'))
         img = np.array(img)
 
         bboxes_ = []
-
         for bbox in bboxes:
             bboxes_.append(BoundingBox(*bbox))
 
@@ -87,20 +86,23 @@ def rescale_dataset(path, path_save, size):
             'source': [source for i in range(length)],
             'bbox': [list(bbox) for bbox in bboxes],
         }
-
         df_ = pd.DataFrame(d)
         df_res = pd.concat([df_res, df_], axis=0, sort=True)
         
-    df_res.to_csv(os.path.join(*path, f'train_{size}x{size}.csv'))
+    df_res.to_csv(
+        os.path.join(path_source, f'train_{size}x{size}.csv'), 
+        index=False
+    )
     
     
 if __name__ == '__main__':
     
     args = parse_args()
     sizes = args.sizes
-    path = ['..','datasets']
-
+    path = ['datasets']
+    
     for i, size in enumerate(tqdm(sizes)):
         
         path_save = path + [f'train_{size}x{size}']
         rescale_dataset(path, path_save, size)
+
