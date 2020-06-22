@@ -3,6 +3,10 @@
 /datasets/test/*
 /datasets/train.csv
 /datasets/sample_submission.csv
+/datasets/train_256x256
+/datasets/train_512x512
+/datasets/train_256x256.csv
+/datasets/train_512x512.csv
 /models/__pycache__
 /transformations/__pycache__
 /utils/__pycache__
