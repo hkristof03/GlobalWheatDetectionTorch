@@ -1,9 +1,9 @@
 dataloader:
-  path_df: './datasets/train_512x512.csv'
+  path_df: './datasets/train_256x256.csv'
   #path_df: './datasets/train.csv'
   #path_df: './datasets/train_unlabeled.csv'  # use this to add negative images to train
   train_dataset:
-    dir_train: './datasets/train_512x512/'
+    dir_train: './datasets/train_256x256/'
   valid_dataset:
     dir_test: './datasets/test/'
   train_loader:
@@ -18,5 +18,5 @@ dataloader:
 train:
   epochs: 62
   path_save_model: './artifacts/saved_models/'
-  model_name: 'fasterrcnn_512_test'
+  model_name: 'fasterrcnn_256_test'
   path_history: './artifacts/history/'
