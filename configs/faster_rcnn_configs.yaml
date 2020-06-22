@@ -18,5 +18,5 @@ dataloader:
 train:
   epochs: 62
   path_save_model: './artifacts/saved_models/'
-  model_name: 'fasterrcnn_negative_test'
+  model_name: 'fasterrcnn_512_test'
   path_history: './artifacts/history/'
