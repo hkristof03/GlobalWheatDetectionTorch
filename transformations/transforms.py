@@ -29,18 +29,40 @@ def to_tensor():
 
 class ImgAugTrainTransform:
     def __init__(self):
-        self.transform = iaa.Sequential([
-            iaa.SomeOf((0, 2), [
-                iaa.Sometimes(0.5, iaa.Fliplr(p=1.0)),
-                iaa.Sometimes(0.5, iaa.Flipud(p=1.0)),
-            ]),
-            iaa.SomeOf((2, 5),[
-                iaa.Sometimes(0.3, iaa.GaussianBlur((0.6, 2.0))),
-                iaa.Sometimes(0.5, iaa.pillike.EnhanceColor((1.1, 1.6))),
-                iaa.Sometimes(0.5, iaa.pillike.EnhanceSharpness((0.7, 1.6))),
-                iaa.Sometimes(0.5, iaa.pillike.Autocontrast(cutoff=(4, 16))),
-                iaa.Sometimes(0.5, iaa.MultiplySaturation((1.2, 5.1)))
-            ])
+        self.transform = iaa.Sequential(
+            [
+                iaa.Sometimes(0.5,
+                    iaa.SomeOf((1, 2), [
+                        iaa.Fliplr(1.0),
+                        iaa.Flipud(1.0),
+                    ])
+                ),
+                iaa.OneOf([
+                    iaa.Sometimes(0.3, [
+                        iaa.OneOf([
+                            iaa.Multiply((0.7, 1.2)),
+                            iaa.MultiplyElementwise((0.7, 1.2)),
+                        ]),
+                        iaa.OneOf([
+                            iaa.MultiplySaturation((5.0, 10.0)), # good
+                            iaa.MultiplyHue((1.5, 3.0)),
+                            iaa.LinearContrast((0.8, 2.0)),
+                            iaa.AllChannelsHistogramEqualization(),
+                        ]),
+                    ]),
+                    iaa.Sometimes(0.3, [
+                        iaa.SomeOf((1, 2), [
+                            iaa.pillike.EnhanceColor((1.1, 1.6)),
+                            iaa.pillike.EnhanceSharpness((0.7, 1.6)),
+                            iaa.pillike.Autocontrast(cutoff=(4, 8)),
+                            iaa.MultiplySaturation((1.2, 5.1)),
+                        ])
+                    ])
+                ]),
+                iaa.Sometimes(0.3, [
+                    iaa.Dropout(p=(0.01, 0.09)),
+                    iaa.GaussianBlur((0.4, 1.5)),
+                ]),
             ],
             random_order=True # apply the augmentations in random order
         )
