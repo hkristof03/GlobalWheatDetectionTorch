@@ -17,7 +17,7 @@ from imgaug.augmentables.bbs import BoundingBox, BoundingBoxesOnImage
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description='Provide list of image sizes for rescale."
+        description='Provide list of image sizes for rescale.'
     )
     parser.add_argument('-sizes', '--list', nargs='+', 
         help='List of desired image sizes.', default=[256, 512]
