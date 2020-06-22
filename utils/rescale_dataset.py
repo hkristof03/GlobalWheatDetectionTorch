@@ -93,7 +93,7 @@ def rescale_dataset(path, path_save, size):
         df_ = pd.DataFrame(d)
         df_res = pd.concat([df_res, df_], axis=0, sort=True)
         
-    df_res.to_csv(os.path.join(*path, f'train_{size}x{size}.csv'))
+    df_res.to_csv(os.path.join(*path, f'train_{size}x{size}.csv'), index=False)
     
     
 if __name__ == '__main__':
