@@ -1,8 +1,9 @@
 dataloader:
+  path_df: './datasets/train_512x512.csv'
   #path_df: './datasets/train.csv'
-  path_df: './datasets/train_unlabeled.csv'  # use this to add negative images to train
+  #path_df: './datasets/train_unlabeled.csv'  # use this to add negative images to train
   train_dataset:
-    dir_train: './datasets/train/'
+    dir_train: './datasets/train_512x512/'
   valid_dataset:
     dir_test: './datasets/test/'
   train_loader:
