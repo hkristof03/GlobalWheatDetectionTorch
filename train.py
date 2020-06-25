@@ -91,8 +91,8 @@ def train_model(
     # End of training
     total_time = timer() - overall_start
     print(
-        f"{total_time:.2f} total seconds elapsed. {total_time / (epoch):.2f} "
-        "seconds per epoch"
+        f"{total_time:.2f} total seconds elapsed. "
+        f"{total_time / (epoch + 1):.2f} seconds per epoch"
     )
     torch.save(model.state_dict(), path_save_model)
 
