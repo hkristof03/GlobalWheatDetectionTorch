@@ -1,8 +1,8 @@
 from ast import literal_eval
 from typing import Tuple, Callable
 import random
-random.seed(2020)
 
+from sklearn.model_selection import StratifiedKFold
 import torch
 from torch.utils.data import DataLoader, Dataset
 
@@ -16,6 +16,9 @@ from transformations import transforms
 DIR_INPUT = './datasets'
 DIR_TRAIN = f'{DIR_INPUT}/train'
 DIR_TEST = f'{DIR_INPUT}/test'
+SEED = 2020
+
+random.seed(2020)
 
 
 class WheatDataset(Dataset):
@@ -95,11 +98,8 @@ class WheatDataset(Dataset):
         return self.image_ids.shape[0]
 
 
-def get_train_valid_df(
-    path_df: str,
-    valid_size: float = 0.1
-    ) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """
+def transform_df(path_df: str) -> pd.DataFrame:
+    """Transforms initial df.
     """
     df = pd.read_csv(path_df)
     df['bbox'] = df['bbox'].apply(lambda x: literal_eval(x))
@@ -115,6 +115,51 @@ def get_train_valid_df(
     df[['x1','y1','x2','y2']] = pd.DataFrame(box_data).astype(np.float)
     areas = (box_data[:, 3] - box_data[:, 1]) * (box_data[:, 2] - box_data[:, 0])
     df['area'] = areas
+
+    return df
+
+
+def split_stratifiedKFolds_bbox_count(df: pd.DataFrame, n_splits: int):
+    """
+    """
+    df_folds = df[['image_id']].copy()
+    skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=SEED)
+
+    df_folds.loc[:, 'bbox_count'] = 1
+    df_folds = df_folds.groupby('image_id').count()
+    df_folds.loc[:, 'source'] = df[['image_id', 'source']].groupby(
+        'image_id'
+    ).min()['source']
+
+    df_folds.loc[:, 'stratify_group'] = np.char.add(
+        df_folds['source'].values.astype(str),
+        df_folds['bbox_count'].apply(lambda x: f'_{x // 15}').values.astype(str)
+    )
+    df_folds.loc[:, 'fold'] = 0
+    train_test_split = skf.split(X=df_folds.index, y=df_folds['stratify_group'])
+
+    for fold_number, (train_index, val_index) in enumerate(train_test_split):
+        df_folds.loc[df_folds.iloc[val_index].index, 'fold'] = fold_number
+
+    df_folds.reset_index(inplace=True)
+    df = pd.merge(df, df_folds, how='left', on='image_id')
+
+    return df
+
+def get_train_valid_df_skfold(df: pd.DataFrame, fold: int):
+    """fold indicates the test fold."""
+    train_df = df.loc[(df['fold'] != fold)].copy()
+    valid_df = df.loc[(df['fold'] == fold)].copy()
+
+    return train_df, valid_df
+
+def get_train_valid_df(
+    path_df: str,
+    valid_size: float = 0.1
+    ) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    """
+    df = transform_df(path_df)
 
     image_ids = df['image_id'].unique()
     random.shuffle(image_ids)
@@ -133,15 +178,16 @@ def collate_fn(batch):
 
 def get_train_valid_dataloaders(
     config_dataloader: dict,
+    train_df,
+    valid_df,
     collate_fn: Callable,
+    train_trf: Callable = None,
+    valid_trf: Callable = None,
     ) -> Tuple[DataLoader, DataLoader]:
     """"""
-    path_df = config_dataloader['path_df']
+    config_train_loader = config_dataloader['train_loader']
+    config_valid_loader = config_dataloader['valid_loader']
     dir_train = config_dataloader['train_dataset']['dir_train']
-
-    train_df, valid_df = get_train_valid_df(path_df)
-    train_trf = transforms.ImgAugTrainTransform()
-    valid_trf = transforms.to_tensor()
 
     train_dataset = WheatDataset(
         train_df,
@@ -155,8 +201,6 @@ def get_train_valid_dataloaders(
         transforms=None,
         to_tensor=valid_trf,
     )
-    config_train_loader = config_dataloader['train_loader']
-    config_valid_loader = config_dataloader['valid_loader']
     train_data_loader = DataLoader(
         train_dataset,
         collate_fn=collate_fn,
@@ -173,15 +217,37 @@ def get_train_valid_dataloaders(
 if __name__ == '__main__':
 
     args = parse_args()
-    configs = parse_yaml(args.pyaml)
-    configs_dataloader = configs['dataloader']
+    config = parse_yaml(args.pyaml)
+    config_dataloader = config['dataloader']
 
-    train_data_loader, valid_data_loader = get_train_valid_dataloaders(
-        configs_dataloader,
-        collate_fn
-    )
-    print(len(train_data_loader))
+    path_df = config_dataloader['path_df']
+    df = transform_df(path_df)
 
-    images, targets, image_ids = next(iter(train_data_loader))
+    train_trf = transforms.ImgAugTrainTransform()
+    valid_trf = transforms.to_tensor()
 
-    print(f"Length of Train dataset: {len(train_data_loader.dataset)}")
+    if config_dataloader['stratifiedKFold']:
+        df = split_stratifiedKFolds_bbox_count(df,
+            config_dataloader['n_splits'])
+        folds = list(df['fold'].unique())
+
+        for i, fold in enumerate(folds):
+
+            train_df, valid_df = get_train_valid_df_skfold(df, fold)
+            train_data_loader, valid_data_loader = get_train_valid_dataloaders(
+                config_dataloader, train_df, valid_df, collate_fn,
+            train_trf, valid_trf)
+            print(len(train_data_loader))
+            images, targets, image_ids = next(iter(train_data_loader))
+    else:
+        train_df, valid_df = get_train_valid_df(path_df)
+
+        train_data_loader, valid_data_loader = get_train_valid_dataloaders(
+            config_dataloader,
+            collate_fn
+        )
+        print(len(train_data_loader))
+
+        images, targets, image_ids = next(iter(train_data_loader))
+
+        print(f"Length of Train dataset: {len(train_data_loader.dataset)}")

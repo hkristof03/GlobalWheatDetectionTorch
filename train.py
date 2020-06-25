@@ -5,7 +5,8 @@ import numpy as np
 from timeit import default_timer as timer
 
 from utils.config_parser import parse_args, parse_yaml
-from dataloader import get_train_valid_dataloaders, collate_fn
+import dataloader as dl
+from transformations import transforms as trfs
 from models.model_zoo import get_model
 from utils.averager import Averager
 
@@ -182,23 +183,24 @@ def get_empty_scores_dict(data_loader):
     return scores_dict
 
 
-if __name__ == '__main__':
-
-    args = parse_args()
-    configs = parse_yaml(args.pyaml)
-    configs_dataloader = configs['dataloader']
-    configs_train = configs['train']
-
+def train_random_holdout(config: dict):
+    """"""
     psm = configs_train['path_save_model']
     mn = configs_train['model_name']
-    path_save_model = psm + mn + '.pth'
     ph = configs_train['path_history']
     path_history = ph + mn
+    config_dataloader = config['dataloader']
+    path_df = config_dataloader['path_df']
 
-    train_data_loader, valid_data_loader = get_train_valid_dataloaders(
-        configs_dataloader,
-        collate_fn
-    )
+    df = dl.transform_df(path_df)
+    train_df, valid_df = dl.get_train_valid_df(path_df, valid_size=0.1)
+    train_trf = trfs.ImgAugTrainTransform()
+    valid_trf = trfs.to_tensor()
+
+    train_data_loader, valid_data_loader = dl.get_train_valid_dataloaders(
+        config_dataloader, train_df, valid_df, dl.collate_fn,
+        train_trf, valid_trf)
+
     model = get_model()
     params = [p for p in model.parameters() if p.requires_grad]
     optimizer = torch.optim.SGD(params, lr=0.0005, momentum=0.9,
@@ -213,3 +215,57 @@ if __name__ == '__main__':
     df_history.to_csv(path_history + '_history.csv', index=False)
     df_scores_train.to_csv(path_history + '_scores_train.csv', index=False)
     df_scores_valid.to_csv(path_history + '_scores_valid.csv', index=False)
+
+
+def train_skfold(config: dict):
+    """"""
+    configs_train = config['train']
+    psm = configs_train['path_save_model']
+    mn = configs_train['model_name']
+    ph = configs_train['path_history']
+    path_history = ph + mn
+    config_dataloader = config['dataloader']
+    path_df = config_dataloader['path_df']
+
+    df = dl.transform_df(path_df)
+    df = dl.split_stratifiedKFolds_bbox_count(df, config_dataloader['n_splits'])
+    folds = list(df['fold'].unique())
+    train_trf = trfs.ImgAugTrainTransform()
+    valid_trf = trfs.to_tensor()
+
+    for i, fold in enumerate(folds):
+
+        path_save_model = psm + mn + f'_fold{fold}.pth'
+        train_df, valid_df = dl.get_train_valid_df_skfold(df, fold)
+        train_data_loader, valid_data_loader = dl.get_train_valid_dataloaders(
+            config_dataloader, train_df, valid_df, dl.collate_fn,
+        train_trf, valid_trf)
+
+        model = get_model()
+        params = [p for p in model.parameters() if p.requires_grad]
+        optimizer = torch.optim.SGD(params, lr=0.0005, momentum=0.9,
+            weight_decay=0.0005)
+        lr_scheduler = None
+        num_epochs = configs_train['epochs']
+
+        df_history, df_scores_train, df_scores_valid = train_model(
+            train_data_loader, valid_data_loader, model, optimizer, num_epochs,
+            lr_scheduler, path_save_model
+        )
+        df_history.to_csv(path_history + f'fold{fold}_history.csv', index=False)
+        df_scores_train.to_csv(path_history + f'fold{fold}_scores_train.csv',
+            index=False)
+        df_scores_valid.to_csv(path_history + f'fold{fold}_scores_valid.csv',
+            index=False)
+
+
+
+if __name__ == '__main__':
+
+    args = parse_args()
+    config = parse_yaml(args.pyaml)
+
+    if config['dataloader']['stratifiedKFold']:
+        train_skfold(config)
+    else:
+        train_random_holdout(config)
