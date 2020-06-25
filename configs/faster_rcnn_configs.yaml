@@ -18,7 +18,7 @@ dataloader:
   n_splits: 5
 
 train:
-  epochs: 1
+  epochs: 67
   path_save_model: './artifacts/saved_models/'
-  model_name: 'fasterrcnn_aug_5fold'
+  model_name: 'fasterrcnn_aug_5fold_'
   path_history: './artifacts/history/'
