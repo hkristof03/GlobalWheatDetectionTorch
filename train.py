@@ -235,6 +235,7 @@ def train_skfold(config: dict):
 
     for i, fold in enumerate(folds):
 
+        print(f"{'_'*30}Training on fold {fold}...{'_'*30}")
         path_save_model = psm + mn + f'_fold{fold}.pth'
         train_df, valid_df = dl.get_train_valid_df_skfold(df, fold)
         train_data_loader, valid_data_loader = dl.get_train_valid_dataloaders(
